@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Elias Blum — System</title>
+  <meta name="description" content="Portfolio of Elias Blum, rendered as a solar system. Planets are categories, civilizations are projects." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;400;600;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+  <div id="labels"></div>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <header class="hud-top">
+      <div class="brand">
+        <div class="brand-mark">EB<span>//</span>OS</div>
+        <div class="brand-sub">STELLAR INDEX v12.0</div>
+      </div>
+      <nav class="crumbs" id="crumbs"></nav>
+      <div class="clock">
+        <div class="clock-city">LAS VEGAS</div>
+        <div class="clock-time" id="clock">--:--:--</div>
+        <div class="clock-date" id="clockDate"></div>
+      </div>
+    </header>
+
+    <aside class="index panel" id="index">
+      <div class="panel-head"><span>SYSTEM INDEX</span><span class="dim" id="indexCount"></span></div>
+      <ul id="indexList"></ul>
+    </aside>
+
+    <aside class="detail panel" id="detail" aria-live="polite">
+      <button class="close" id="detailClose" aria-label="Close">✕</button>
+      <div id="detailBody"></div>
+    </aside>
+
+    <footer class="hud-bottom">
+      <button class="back" id="backBtn" hidden>◂ SYSTEM VIEW</button>
+      <div class="hints" id="hints">DRAG ROTATE · SCROLL ZOOM · CLICK A PLANET · [1–5] JUMP · [ESC] BACK</div>
+    </footer>
+
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+  </div>
+
+  <!-- Boot -->
+  <div id="boot">
+    <pre id="bootText"></pre>
+    <button id="bootSkip">SKIP ▸</button>
+  </div>
+
+  <noscript><p style="color:#4cf0ff;padding:2rem;font-family:monospace">This portfolio needs JavaScript and WebGL.</p></noscript>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
