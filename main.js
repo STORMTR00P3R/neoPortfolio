@@ -5,8 +5,13 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { SUN, PLANETS } from './data.js';
 
-const SUN_RADIUS = 3.4;
+const SUN_RADIUS = 6.5;
 const INSTANT = new URLSearchParams(location.search).has('instant'); // debug: skip tweens + boot
+// Fade the sun out as the camera gets close, so you can see through it instead of
+// flying into a wall of light. Set to false to remove it.
+const SUN_FADE = true;
+const SUN_FADE_START = SUN_RADIUS * 1.9; // camera distance where fading begins (outside the sun view's zoom limit)
+const SUN_FADE_END = SUN_RADIUS * 1.15; // fully invisible from here inward
 const $ = (id) => document.getElementById(id);
 const pad = (n, w = 2) => String(n).padStart(w, '0');
 
@@ -58,7 +63,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000306);
-scene.fog = new THREE.FogExp2(0x000306, 0.006);
+scene.fog = new THREE.FogExp2(0x000306, 0.004);
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.05, 2000);
 
 const composer = new EffectComposer(renderer);
@@ -80,6 +85,7 @@ function hexPointsMaterial(color, size) {
       uScale: { value: window.innerHeight * renderer.getPixelRatio() / 2 },
       uTime: { value: 0 },
       uActiveCity: { value: -1 },
+      uFade: { value: 1 },
       uFocus: { value: 0 },
     },
     vertexShader: /* glsl */ `
@@ -101,6 +107,7 @@ function hexPointsMaterial(color, size) {
     `,
     fragmentShader: /* glsl */ `
       uniform vec3 uColor;
+      uniform float uFade;
       varying float vBright;
       varying float vCity;
       void main() {
@@ -109,7 +116,7 @@ function hexPointsMaterial(color, size) {
         if (hex > 0.42) discard;
         vec3 col = mix(uColor, vec3(1.0, 0.97, 0.9), vCity * 0.3);
         float edge = 1.0 - smoothstep(0.34, 0.42, hex);
-        gl_FragColor = vec4(col * vBright, edge * clamp(vBright, 0.0, 1.0));
+        gl_FragColor = vec4(col * vBright, edge * clamp(vBright, 0.0, 1.0) * uFade);
       }
     `,
   });
@@ -170,7 +177,7 @@ function atmosphereMaterial(color, power = 3.0, intensity = 1.0) {
 
 /* Faint ecliptic grid */
 {
-  const grid = new THREE.PolarGridHelper(38, 24, 12, 96, 0x0c3a40, 0x0c3a40);
+  const grid = new THREE.PolarGridHelper(54, 24, 12, 96, 0x0c3a40, 0x0c3a40);
   grid.material.transparent = true;
   grid.material.opacity = 0.22;
   grid.position.y = -0.01;
@@ -186,7 +193,8 @@ scene.add(sun);
   const core = new THREE.Mesh(
     new THREE.SphereGeometry(SUN_RADIUS * 0.94, 64, 64),
     new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 } },
+      transparent: true,
+      uniforms: { uTime: { value: 0 }, uFade: { value: 1 } },
       vertexShader: /* glsl */ `
         varying vec3 vP; varying vec3 vN; varying vec3 vV;
         void main() {
@@ -197,7 +205,7 @@ scene.add(sun);
         }
       `,
       fragmentShader: /* glsl */ `
-        uniform float uTime;
+        uniform float uTime, uFade;
         varying vec3 vP; varying vec3 vN; varying vec3 vV;
         float h(vec3 p){ return fract(sin(dot(p, vec3(127.1,311.7,74.7))) * 43758.5453); }
         float n(vec3 p){
@@ -206,13 +214,13 @@ scene.add(sun);
                      mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z);
         }
         void main() {
-          vec3 p = vP * 1.4;
+          vec3 p = vP * ${(4.8 / SUN_RADIUS).toFixed(4)};
           float t = uTime * 0.15;
           float v = n(p + t) * 0.5 + n(p * 2.3 - t) * 0.3 + n(p * 5.1 + t * 2.0) * 0.2;
           float rim = pow(1.0 - max(dot(vN, vV), 0.0), 2.0);
           vec3 a = vec3(0.9, 0.3, 0.04), b = vec3(1.0, 0.75, 0.35);
           vec3 col = mix(a, b, smoothstep(0.35, 0.75, v)) * (0.55 + rim * 0.5);
-          gl_FragColor = vec4(col, 1.0);
+          gl_FragColor = vec4(col, uFade);
         }
       `,
     }),
@@ -221,7 +229,7 @@ scene.add(sun);
   sun.add(core);
 
   // hex-dot shell around the core, same language as the planets
-  const N = 3200;
+  const N = Math.round(280 * SUN_RADIUS * SUN_RADIUS);
   const pos = new Float32Array(N * 3), bright = new Float32Array(N), city = new Float32Array(N), phase = new Float32Array(N);
   const ga = Math.PI * (3 - Math.sqrt(5));
   for (let i = 0; i < N; i++) {
@@ -240,7 +248,9 @@ scene.add(sun);
   shell.name = 'sunShell';
   sun.add(shell);
 
-  sun.add(new THREE.Mesh(new THREE.SphereGeometry(SUN_RADIUS * 1.45, 48, 48), atmosphereMaterial('#ff9a3c', 1.6, 1.1)));
+  const atmo = new THREE.Mesh(new THREE.SphereGeometry(SUN_RADIUS * 1.3, 48, 48), atmosphereMaterial('#ff9a3c', 1.6, 1.1));
+  atmo.name = 'sunAtmo';
+  sun.add(atmo);
 
   // corona sprite
   const c = document.createElement('canvas');
@@ -252,15 +262,17 @@ scene.add(sun);
   grad.addColorStop(1, 'rgba(255,120,40,0)');
   ctx.fillStyle = grad; ctx.fillRect(0, 0, 256, 256);
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
-  sprite.scale.setScalar(SUN_RADIUS * 4.2);
+  sprite.scale.setScalar(SUN_RADIUS * 3.6);
+  sprite.name = 'sunCorona';
   sun.add(sprite);
 
   // equatorial HUD ring
   const ring = new THREE.Mesh(
-    new THREE.RingGeometry(SUN_RADIUS * 1.55, SUN_RADIUS * 1.58, 128),
+    new THREE.RingGeometry(SUN_RADIUS * 1.3, SUN_RADIUS * 1.315, 128),
     new THREE.MeshBasicMaterial({ color: '#ffc857', transparent: true, opacity: 0.35, side: THREE.DoubleSide }),
   );
   ring.rotation.x = Math.PI / 2;
+  ring.name = 'sunRing';
   sun.add(ring);
 
   // pick target
@@ -301,18 +313,27 @@ function buildPlanet(data, pi) {
   const threshold = sorted[Math.floor(N * 0.52)];
 
   // place civilizations: spread around longitude, mid-latitudes, snapped to land
-  const civDirs = data.civs.map((_, ci) => {
-    const n = data.civs.length;
+  // while keeping a minimum angular gap so neighbouring cities never crowd each other
+  const n = data.civs.length;
+  const minGap = Math.cos(Math.min(0.9, 2.2 / Math.sqrt(n)));
+  const civDirs = [];
+  const farEnough = (i) => civDirs.every((c) => c.x * dirs[i * 3] + c.y * dirs[i * 3 + 1] + c.z * dirs[i * 3 + 2] < minGap);
+  data.civs.forEach((_, ci) => {
     const lon = (ci / n) * Math.PI * 2 + rand() * 0.5;
     const lat = (rand() - 0.5) * (n > 4 ? 1.4 : 0.9) + (n > 4 ? (ci % 2 ? 0.35 : -0.35) : 0);
     const v = new THREE.Vector3(Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon));
-    let best = -2, bi = 0;
+    // prefer spaced-out land, then any spaced-out point, then plain nearest land
+    let land = -1, any = -1, near = -1, dl = -2, da = -2, dn = -2;
     for (let i = 0; i < N; i++) {
-      if (noise[i] < threshold) continue;
       const d = dirs[i * 3] * v.x + dirs[i * 3 + 1] * v.y + dirs[i * 3 + 2] * v.z;
-      if (d > best) { best = d; bi = i; }
+      const isLand = noise[i] >= threshold;
+      if (isLand && d > dn) { dn = d; near = i; }
+      if ((isLand ? d > dl : d > da) && farEnough(i)) {
+        if (isLand) { dl = d; land = i; } else { da = d; any = i; }
+      }
     }
-    return new THREE.Vector3(dirs[bi * 3], dirs[bi * 3 + 1], dirs[bi * 3 + 2]);
+    const bi = land >= 0 && dl > da - 0.15 ? land : any >= 0 ? any : near;
+    civDirs.push(new THREE.Vector3(dirs[bi * 3], dirs[bi * 3 + 1], dirs[bi * 3 + 2]));
   });
 
   const pos = [], bright = [], city = [], phase = [];
@@ -417,7 +438,7 @@ function buildPlanet(data, pi) {
 
   return {
     data, index: pi, root, tilt, spin, civs, surfaceMat, orbitLine,
-    angle: rand() * Math.PI * 2,
+    angle: pi * 2.4 + rand() * 0.4,
     spinSpeed: 0.08 + rand() * 0.06,
   };
 }
@@ -428,7 +449,7 @@ function buildPlanet(data, pi) {
 const rig = {
   target: new THREE.Vector3(),
   targetGoal: new THREE.Vector3(),
-  theta: 0.6, phi: 1.05, radius: 140,
+  theta: 0.6, phi: 1.05, radius: 200,
   goal: { theta: 0.6, phi: 1.05, radius: 62 },
   min: 4, max: 120,
 };
@@ -436,6 +457,22 @@ function angleLerp(a, b, t) {
   let d = ((b - a + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
   return a + d * t;
 }
+// 1 = fully visible, 0 = gone. Eased so the fade starts and ends gently.
+let sunFade = 1;
+function updateSunFade() {
+  const f = SUN_FADE ? THREE.MathUtils.smoothstep(camera.position.length(), SUN_FADE_END, SUN_FADE_START) : 1;
+  if (f === sunFade) return;
+  sunFade = f;
+  const core = sun.getObjectByName('sunCore').material;
+  core.uniforms.uFade.value = f;
+  core.depthWrite = f > 0.99; // let the planets behind show through while fading
+  sun.getObjectByName('sunShell').material.uniforms.uFade.value = f;
+  sun.getObjectByName('sunAtmo').material.uniforms.uIntensity.value = 1.1 * f;
+  sun.getObjectByName('sunCorona').material.opacity = f;
+  sun.getObjectByName('sunRing').material.opacity = 0.35 * f;
+  sun.visible = f > 0.005;
+}
+
 function updateCamera(dt) {
   const k = INSTANT ? 1 : 1 - Math.pow(0.0025, dt);
   rig.target.lerp(rig.targetGoal, k);
@@ -449,6 +486,7 @@ function updateCamera(dt) {
     rig.target.z + rig.radius * s * Math.cos(rig.theta),
   );
   camera.lookAt(rig.target);
+  updateSunFade();
 }
 
 /* ======================================================================
@@ -467,9 +505,9 @@ function worldPos(obj, v = new THREE.Vector3()) { return obj.getWorldPosition(v)
 function goSystem({ push = true } = {}) {
   state.view = 'system'; state.planet = -1; state.civ = -1;
   rig.targetGoal.set(0, 0, 0);
-  rig.goal.radius = window.innerWidth < 820 ? 88 : 58;
-  rig.goal.phi = 1.05;
-  rig.min = 12; rig.max = 120;
+  rig.goal.radius = window.innerWidth < 820 ? 150 : 104;
+  rig.goal.phi = 0.95;
+  rig.min = 16; rig.max = 170;
   closeDetail();
   afterNav(push);
 }
@@ -477,9 +515,9 @@ function goSystem({ push = true } = {}) {
 function goSun({ push = true } = {}) {
   state.view = 'sun'; state.planet = -1; state.civ = -1;
   rig.targetGoal.set(0, 0, 0);
-  rig.goal.radius = SUN_RADIUS * (window.innerWidth < 820 ? 7.5 : 5.6);
+  rig.goal.radius = SUN_RADIUS * (window.innerWidth < 820 ? 6.5 : 4.8);
   rig.goal.phi = 1.25;
-  rig.min = SUN_RADIUS * 2; rig.max = 60;
+  rig.min = SUN_RADIUS * 2; rig.max = 110;
   openDetail(renderSun(), SUN.id, '#ffc857');
   afterNav(push);
 }
@@ -503,8 +541,8 @@ function goCiv(pi, ci, { push = true } = {}) {
   p.spin.updateMatrixWorld(true);
   const center = worldPos(p.root);
   const w = civ.top.clone().applyMatrix4(p.spin.matrixWorld).sub(center).normalize();
-  rig.goal.theta = Math.atan2(w.x, w.z) + (window.innerWidth < 820 ? 0 : 0.25);
-  rig.goal.phi = THREE.MathUtils.clamp(Math.acos(w.y) + 0.12, 0.35, Math.PI - 0.35);
+  rig.goal.theta = Math.atan2(w.x, w.z) + (window.innerWidth < 820 ? 0 : 0.35);
+  rig.goal.phi = THREE.MathUtils.clamp(Math.acos(w.y) + 0.25, 0.35, Math.PI - 0.35);
   rig.goal.radius = p.data.radius * (window.innerWidth < 820 ? 6.2 : 4.4);
   openDetail(renderCiv(p, ci), `${p.data.id}-${civ.data.id}`, p.data.color);
   afterNav(push);
@@ -714,6 +752,55 @@ function updateLabels() {
   });
 }
 
+/* ---------- planet frame + leader line (focused views) ---------- */
+const frameEl = $('frame'), leader = $('leader');
+const leaderLine = leader.querySelector('polyline');
+const [leaderRing, leaderDot] = leader.querySelectorAll('circle');
+const _r = new THREE.Vector3();
+function toScreen(v) {
+  _v.copy(v).project(camera);
+  return { x: (_v.x * 0.5 + 0.5) * window.innerWidth, y: (-_v.y * 0.5 + 0.5) * window.innerHeight, z: _v.z };
+}
+function updateFrame() {
+  const wide = window.innerWidth >= 820;
+  const p = state.view === 'planet' ? planets[state.planet] : null;
+  const show = wide && (state.view === 'sun' || p);
+  frameEl.classList.toggle('off', !show);
+  let leaderOn = false;
+  if (show) {
+    const center = p ? worldPos(p.root, _c) : _c.set(0, 0, 0);
+    const R = p ? p.data.radius : SUN_RADIUS;
+    const c = toScreen(center);
+    _r.setFromMatrixColumn(camera.matrixWorld, 0).multiplyScalar(R).add(center);
+    const r = Math.abs(toScreen(_r).x - c.x);
+    const w = r * 3, h = r * 2.6;
+    const top = c.y - h / 2;
+    frameEl.style.transform = `translate(${(c.x - w / 2).toFixed(1)}px, ${top.toFixed(1)}px)`;
+    frameEl.style.width = `${w.toFixed(1)}px`;
+    frameEl.style.height = `${h.toFixed(1)}px`;
+    frameEl.style.setProperty('--c', p ? p.data.color : '#ffc857');
+    frameEl.style.setProperty('--stem', `${Math.max(0, c.y - r - top + 18).toFixed(1)}px`);
+    $('frameName').textContent = p ? p.data.name : SUN.name;
+
+    if (p && state.civ >= 0 && detail.classList.contains('open')) {
+      const civ = p.civs[state.civ];
+      const wpos = civ.top.clone().applyMatrix4(p.spin.matrixWorld);
+      const facing = _n.copy(wpos).sub(center).normalize().dot(_r.copy(camera.position).sub(center).normalize());
+      if (facing > 0) {
+        const s = toScreen(wpos);
+        const box = detail.getBoundingClientRect();
+        const x0 = box.right, y0 = box.top + 64;
+        const elbow = x0 + 28;
+        leaderLine.setAttribute('points', `${x0},${y0} ${elbow},${y0} ${s.x},${s.y}`);
+        for (const el of [leaderRing, leaderDot]) { el.setAttribute('cx', s.x); el.setAttribute('cy', s.y); }
+        leader.style.setProperty('--c', p.data.color);
+        leaderOn = true;
+      }
+    }
+  }
+  leader.classList.toggle('on', leaderOn);
+}
+
 /* ---------- clock ---------- */
 function tickClock() {
   const now = new Date();
@@ -860,7 +947,7 @@ function frame() {
   });
 
   if (state.view === 'planet') worldPos(planets[state.planet].root, rig.targetGoal);
-  const wantOffset = detail.classList.contains('open') && window.innerWidth >= 820 ? 4.5 : 0;
+  const wantOffset = detail.classList.contains('open') && window.innerWidth >= 820 ? -4.5 : 0;
   if (Math.abs(camera.filmOffset - wantOffset) > 0.01) {
     camera.filmOffset += (wantOffset - camera.filmOffset) * (INSTANT ? 1 : 1 - Math.pow(0.01, dt));
     camera.updateProjectionMatrix();
@@ -868,6 +955,7 @@ function frame() {
   updateCamera(dt);
   scene.updateMatrixWorld();
   updateLabels();
+  updateFrame();
   composer.render();
   requestAnimationFrame(frame);
 }
@@ -897,7 +985,7 @@ async function boot() {
   let skipped = false;
   skip.then(() => (skipped = true));
   const wait = (ms) => Promise.race([new Promise((r) => setTimeout(r, ms)), skip]);
-  if (sessionStorageGet('eb-booted') || reduceMotion || INSTANT) skipped = true;
+  if (reduceMotion || INSTANT) skipped = true;
   for (const [line, tag] of BOOT) {
     if (skipped) break;
     out.innerHTML += esc(line);
@@ -911,17 +999,14 @@ async function boot() {
 function finishBoot() {
   if (booted) return;
   booted = true;
-  sessionStorageSet('eb-booted', '1');
   $('boot').classList.add('done');
   $('hud').classList.remove('hidden');
   if (location.hash) fromHash();
   else goSystem({ push: false });
 }
-function sessionStorageGet(k) { try { return sessionStorage.getItem(k); } catch { return null; } }
-function sessionStorageSet(k, v) { try { sessionStorage.setItem(k, v); } catch { /* ignore */ } }
 
 renderIndex();
 renderCrumbs();
-rig.goal.radius = 140; // stay far out until boot finishes
+rig.goal.radius = 200; // stay far out until boot finishes
 frame();
 boot();

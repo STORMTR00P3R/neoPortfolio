@@ -126,11 +126,11 @@ body::after {
 
 /* detail */
 .detail {
-  right: 28px; top: 50%;
+  left: 28px; top: 50%;
   width: min(380px, calc(100vw - 56px));
   max-height: calc(100vh - 200px);
   overflow-y: auto;
-  transform: translate(calc(100% + 60px), -50%);
+  transform: translate(calc(-100% - 60px), -50%);
   transition: transform .55s cubic-bezier(.2,.8,.2,1);
   --accent: var(--c, #4cf0ff);
   border-color: color-mix(in srgb, var(--accent) 40%, transparent);
@@ -173,6 +173,38 @@ blockquote.q { margin: 14px 0; padding: 10px 12px; border-left: 2px solid var(--
 blockquote.q cite { display: block; margin-top: 6px; font-style: normal; font-size: 10px; letter-spacing: .2em; color: var(--muted); }
 .stat { display: grid; grid-template-columns: 110px 1fr; font-size: 12px; padding: 5px 0; border-bottom: 1px solid var(--accent-faint); }
 .stat span:first-child { color: var(--muted); font-size: 10px; letter-spacing: .2em; }
+
+/* index steps aside while the info panel owns the left side */
+.index { transition: opacity .4s, transform .4s; }
+body.focus .index { opacity: 0; pointer-events: none; transform: translate(-30px, -50%); }
+
+/* planet frame (sketch: boxed planet, crosshair ticks, name callout) */
+#frame {
+  position: absolute; left: 0; top: 0;
+  --c: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--c) 30%, transparent);
+  border-radius: 18px;
+  transition: opacity .5s;
+}
+#frame.off { opacity: 0; }
+#frame .tick { position: absolute; background: color-mix(in srgb, var(--c) 75%, transparent); }
+#frame .tick.l, #frame .tick.r { width: 34px; height: 1px; top: 50%; }
+#frame .tick.l { left: -17px; }
+#frame .tick.r { right: -17px; }
+#frame .tick.b { width: 1px; height: 34px; left: 50%; bottom: -17px; }
+#frame .tick.t { width: 1px; height: 10px; left: 50%; top: -5px; }
+.f-title { position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); padding-bottom: 14px; text-align: center; }
+.f-title span {
+  font-family: var(--display); font-weight: 700; font-size: 22px; letter-spacing: .22em;
+  color: var(--c); text-shadow: 0 0 14px color-mix(in srgb, var(--c) 55%, transparent); white-space: nowrap;
+}
+.f-stem { position: absolute; left: 50%; top: 100%; width: 1px; height: var(--stem, 40px); margin-top: -14px; background: linear-gradient(var(--c), color-mix(in srgb, var(--c) 20%, transparent)); }
+
+#leader { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; opacity: 0; transition: opacity .4s; --c: var(--accent); }
+#leader.on { opacity: 1; }
+#leader polyline { fill: none; stroke: var(--c); stroke-width: 1.2; filter: drop-shadow(0 0 4px var(--c)); }
+#leader circle { fill: none; stroke: var(--c); stroke-width: 1.5; }
+#leader circle.dot { fill: var(--c); stroke: none; }
 
 /* bottom */
 .hud-bottom {
@@ -231,6 +263,7 @@ blockquote.q cite { display: block; margin-top: 6px; font-style: normal; font-si
   .back { position: fixed; top: 64px; left: 16px; }
   .corner { display: none; }
   body.focus .index { display: none; }
+  #frame, #leader { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .detail, #hud, #boot { transition: none; }

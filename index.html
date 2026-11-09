@@ -20,7 +20,13 @@
 </head>
 <body>
   <canvas id="scene"></canvas>
-  <div id="labels"></div>
+  <div id="labels">
+    <svg id="leader" aria-hidden="true"><polyline points="" /><circle r="11" /><circle r="3" class="dot" /></svg>
+    <div id="frame" class="off" aria-hidden="true">
+      <div class="f-title"><span id="frameName"></span><i class="f-stem"></i></div>
+      <i class="tick t"></i><i class="tick r"></i><i class="tick b"></i><i class="tick l"></i>
+    </div>
+  </div>
 
   <!-- HUD -->
   <div id="hud" class="hidden">
