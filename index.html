@@ -67,9 +67,18 @@
       <span class="chev">‹</span><span class="edge-label">RETURN</span>
     </button>
     <div class="beyond-hud" id="beyondHud" aria-live="off">
+      <button class="beyond-skip" id="beyondSkip" type="button">SKIP TO CORE ▸</button>
+      <button class="beyond-replay" id="beyondReplay" type="button">↺ REPLAY</button>
       <div class="beyond-readout" id="beyondReadout">BEYOND // PHASE 1/5 · STATIC</div>
-      <div class="hints">CLICK / SPACE PAUSE · [ ] PHASE · ← / ESC RETURN</div>
+      <div class="hints" id="beyondHints">CLICK / SPACE PAUSE · [ ] PHASE · ← / ESC RETURN</div>
     </div>
+
+    <!-- signals: one button per interest category, laid over the satellites orbiting the core -->
+    <div class="signals" id="signals" role="group" aria-label="Interests" inert></div>
+    <aside class="panel signal-panel" id="signalPanel" role="dialog" aria-labelledby="signalTitle" aria-hidden="true" inert>
+      <button class="close" id="signalClose" type="button" aria-label="Close">✕</button>
+      <div id="signalBody"></div>
+    </aside>
 
     <div class="corner tl"></div><div class="corner tr"></div>
     <div class="corner bl"></div><div class="corner br"></div>

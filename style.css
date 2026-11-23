@@ -288,6 +288,77 @@ body.leaving .hud-bottom { opacity: 0 !important; pointer-events: none !importan
   text-shadow: 0 0 10px rgba(255, 200, 87, .45); font-variant-numeric: tabular-nums; margin-bottom: 6px;
 }
 
+/* ---------- beyond: signals (interest categories orbiting the core) ---------- */
+.beyond-hud .beyond-replay {
+  display: none; pointer-events: none; opacity: 0; transition: opacity .5s;
+  font-size: 11px; letter-spacing: .25em; color: var(--sun);
+  border: 1px solid rgba(255, 200, 87, .35); background: var(--panel); padding: 6px 12px; margin-bottom: 8px;
+}
+.beyond-hud.show .beyond-replay.show { display: inline-block; pointer-events: auto; opacity: .85; }
+.beyond-hud .beyond-replay:hover, .beyond-hud .beyond-replay:focus-visible { opacity: 1; background: rgba(255, 200, 87, .08); }
+
+/* skip the eye sequence: sits in the action slot above the readout (REPLAY takes it at the core),
+   away from the screen corners where the vignette darkens everything */
+.beyond-hud .beyond-skip {
+  display: none; margin: 0 auto 10px; pointer-events: auto;
+  font-size: 12px; letter-spacing: .22em; color: #e6fdff;
+  padding: 9px 18px; border: 1px solid var(--accent); background: rgba(76, 240, 255, .14);
+  text-shadow: 0 0 10px rgba(76, 240, 255, .8); box-shadow: 0 0 18px rgba(76, 240, 255, .22);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+  transition: background .2s;
+}
+.beyond-hud .beyond-skip.show { display: inline-block; }
+.beyond-hud .beyond-skip:hover, .beyond-hud .beyond-skip:focus-visible { background: rgba(76, 240, 255, .28); color: #fff; }
+body:not(.in-beyond) .beyond-skip { visibility: hidden; }
+body.in-beyond #beyond.skipping { opacity: 0; transition-duration: .25s; }
+
+/* one button per satellite, moved over it every frame by signals.js; the cluster itself is drawn in the canvas */
+.signals { position: absolute; inset: 0; pointer-events: none !important; opacity: 0; transition: opacity .6s; }
+.signals.show { opacity: 1; }
+body:not(.in-beyond) .signals, body:not(.in-beyond) .signal-panel { visibility: hidden; } /* never outside Beyond */
+.signal {
+  position: absolute; left: 0; top: 0; width: 64px; height: 44px;
+  --c: var(--accent); color: var(--c);
+}
+.signals.show .signal { pointer-events: auto; }
+.signal-label {
+  position: absolute; left: 50%; top: calc(100% - 2px); transform: translateX(-50%);
+  font-size: 11px; letter-spacing: .25em; white-space: nowrap;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--c) 60%, transparent);
+  opacity: .7; transition: opacity .2s, color .2s;
+}
+.signal-key {
+  position: absolute; left: 50%; bottom: calc(100% - 2px); transform: translateX(-50%);
+  font-size: 9px; letter-spacing: .2em; color: var(--muted); opacity: 0; transition: opacity .2s;
+}
+.signal:hover .signal-label, .signal:focus-visible .signal-label, .signal[aria-expanded="true"] .signal-label { opacity: 1; color: #fff; }
+.signal:hover .signal-key, .signal:focus-visible .signal-key { opacity: 1; }
+.signal:focus-visible { outline: 1px dashed var(--c); outline-offset: 2px; }
+
+/* the category panel: same EB//OS panel as the planets, sliding in from the right */
+.signal-panel {
+  right: 28px; top: 50%;
+  width: min(360px, calc(100vw - 56px)); max-height: calc(100vh - 200px); overflow-y: auto;
+  --accent: var(--c, #ff3cac);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  transform: translate(calc(100% + 60px), -50%);
+  transition: transform .5s cubic-bezier(.2, .8, .2, 1);
+  scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--accent) 35%, transparent) transparent;
+}
+.signal-panel.open { transform: translate(0, -50%); }
+.signal-panel .close { position: absolute; top: 8px; right: 12px; color: var(--muted); font-size: 14px; padding: 4px; z-index: 1; }
+.signal-panel .close:hover { color: var(--accent); }
+.signal-panel .d-title:focus { outline: none; }
+.sp-list { list-style: none; margin: 10px 0 0; padding: 0; }
+.sp-list li {
+  display: grid; grid-template-columns: 28px 1fr; gap: 6px; padding: 10px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.sp-n { color: var(--muted); font-size: 11px; padding-top: 2px; }
+.sp-prompt { font-size: 10px; letter-spacing: .25em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; } /* the question the answer belongs to */
+.sp-name { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--text); }
+.sp-note { font-size: 12px; line-height: 1.5; color: var(--muted); margin-top: 3px; }
+
 /* ---------- boot ---------- */
 #boot {
   position: fixed; inset: 0; z-index: 10; background: var(--bg);
@@ -335,6 +406,23 @@ body.leaving .hud-bottom { opacity: 0 !important; pointer-events: none !importan
   .beyond-hud { bottom: 16px; width: calc(100% - 32px); }
   .beyond-readout { font-size: 10px; letter-spacing: .2em; }
   .beyond-hud .hints { display: none; }
+  .beyond-hud .beyond-skip { padding: 10px 16px; }
+  /* phones: no tiny orbiting targets, the categories become a tap-friendly list under the core */
+  .signals.grid {
+    inset: auto 16px 72px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .signals.grid .signal {
+    position: static; width: auto; height: 46px; transform: none !important;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); background: var(--panel);
+  }
+  .signals.grid .signal-label, .signals.grid .signal-key { position: static; transform: none; opacity: 1; }
+  .signals.grid .signal[aria-expanded="true"] { background: color-mix(in srgb, var(--c) 18%, var(--panel)); }
+  .signal-panel {
+    left: 16px; right: 16px; top: auto; bottom: 16px; width: auto; max-height: 58vh;
+    transform: translateY(calc(100% + 40px));
+  }
+  .signal-panel.open { transform: translateY(0); }
 }
 @media (prefers-reduced-motion: reduce) {
   .detail, #hud, #boot { transition: none; }
@@ -342,4 +430,5 @@ body.leaving .hud-bottom { opacity: 0 !important; pointer-events: none !importan
   #scene, #beyond { transition: opacity .25s linear; }
   body.leaving #scene { filter: none; transform: none; }
   .chev { animation: none; }
+  .signal-panel, .signals { transition: opacity .25s linear; }
 }

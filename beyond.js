@@ -1,7 +1,8 @@
 // BEYOND — an animated ASCII visualizer that lives outside the solar system.
 // It plays once: an eye opens out of the static (the static is its skin), we fall into the pupil
 // at one steady speed and fly through space to a pink core deep inside, then stay there with the
-// core slowly beating.
+// core slowly beating. At the core, "signals" (interest categories from interests.js) orbit it as
+// small character clusters; signals.js layers real buttons over them and runs the panels.
 // Every frame each grid cell gets a brightness + colour family from a bit of maths, which picks a
 // character from a ramp. Glyphs are pre-rendered once into an atlas, so a frame is just blits.
 
@@ -84,6 +85,16 @@ function blinkShut(t) {
   if (x < 0.15) return 1;
   return (1 - (x - 0.15) / 0.35) ** 2;
 }
+function mixHex(a, b, k) {
+  const A = parseInt(a.slice(1), 16), B = parseInt(b.slice(1), 16);
+  const c = (s) => Math.round(((A >> s) & 255) * (1 - k) + ((B >> s) & 255) * k);
+  return '#' + ((c(16) << 16) | (c(8) << 8) | c(0)).toString(16).padStart(6, '0');
+}
+// a dark-to-bright palette around one accent colour, like the built-in families
+const familyFor = (hex) => [mixHex(hex, '#000000', 0.9), mixHex(hex, '#000000', 0.6), mixHex(hex, '#000000', 0.25), hex, mixHex(hex, '#ffffff', 0.5), mixHex(hex, '#ffffff', 0.85)];
+// a satellite: a small round cluster of characters (dx, dy in cells, brightness)
+const SAT_SHAPE = [[-2, 0, 0.45], [-1, 0, 0.8], [0, 0, 1], [1, 0, 0.8], [2, 0, 0.45], [-1, -1, 0.35], [0, -1, 0.55], [1, -1, 0.35], [-1, 1, 0.35], [0, 1, 0.55], [1, 1, 0.35]];
+const ORBIT_PERIOD = 90; // seconds per lap of the signal ring
 const phaseIndex = (t) => {
   let p = 0;
   PHASES.forEach((ph, i) => { if (t >= ph.start) p = i; });
@@ -110,8 +121,14 @@ function zoomDepth(t) {
 // how fast we fly through the starfield: steady during the zoom, then a slow drift at the core
 const flightSpeed = (t) => 0.06 * smooth(ZOOM_START, ZOOM_START + ZOOM_EASE_IN, t) + 0.4 * zoomVel(t);
 
-export function createBeyond({ canvas, readout, reduceMotion = false }) {
+export function createBeyond({ canvas, readout, reduceMotion = false, signals = [], onFrame = null, onBackgroundClick = null }) {
   const ctx = canvas.getContext('2d', { alpha: false });
+  const fams = FAMILIES.concat(signals.map((sg) => familyFor(sg.color)));
+  const SIG0 = FAMILIES.length; // palette index of the first signal
+  let ring = 0, hoverIdx = -1, selIdx = -1, frameStep = 0, shiftX = 0;
+  let tintFrom = PINK, tintTo = PINK, tintMix = 1; // core colour: crossfades cell by cell from → to
+  let satGlyph = null, satB = null, satFam = null, satCells = [];
+  const satPx = signals.map(() => ({ x: 0, y: 0 }));
   let running = false, paused = false, raf = 0;
   let T = 0, last = 0, fps = 60, hudAt = 0, throttle = 0;
   let W = 0, H = 0, cols = 0, rows = 0, cw = 0, ch = 0, gw = 0, gh = 0, dpr = 1;
@@ -153,6 +170,10 @@ export function createBeyond({ canvas, readout, reduceMotion = false }) {
     for (let k = 0; k < hashA.length; k++) hashA[k] = hashInt(k, 7);
     starGlyph = new Int8Array(cols * rows);
     starB = new Float32Array(cols * rows);
+    satGlyph = new Int8Array(cols * rows).fill(-1);
+    satB = new Float32Array(cols * rows);
+    satFam = new Uint8Array(cols * rows);
+    satCells = [];
     if (!stars) initStars(mobile ? 220 : 520);
     atlas = buildAtlas(px);
   }
@@ -161,12 +182,12 @@ export function createBeyond({ canvas, readout, reduceMotion = false }) {
   function buildAtlas(px) {
     const c = document.createElement('canvas');
     c.width = gw * CHARS.length;
-    c.height = gh * FAMILIES.length * LEVELS;
+    c.height = gh * fams.length * LEVELS;
     const x = c.getContext('2d');
     x.font = `600 ${px * dpr}px ${FONT}`;
     x.textAlign = 'center';
     x.textBaseline = 'middle';
-    FAMILIES.forEach((stops, fi) => {
+    fams.forEach((stops, fi) => {
       for (let l = 0; l < LEVELS; l++) {
         const color = sample(stops, (l + 1) / LEVELS);
         x.fillStyle = color;
@@ -261,6 +282,42 @@ export function createBeyond({ canvas, readout, reduceMotion = false }) {
     const coreVis = smooth(ZOOM_START + 0.8, ZOOM_START + 2.3, t);
     const haloW = Math.max(0.015, coreR * 0.55);
 
+    // at the core: signals fade in; on phones the core moves up to make room for the category list
+    const mobile = W < 820;
+    const arrive = smooth(HOLD - 0.3, HOLD + 1.5, T);
+    const n = signals.length;
+    const rx = Math.min(0.98, W / H - 0.3), ry = 0.62;
+    const ease = 1 - Math.exp(-frameStep * 5);
+    // with a panel open on desktop, slide the core and ring left so the panel doesn't cover them
+    const wantShift = selIdx >= 0 && !mobile ? Math.max(0, Math.min(0.42, W / H - rx * 0.87 - 0.25)) : 0;
+    shiftX += (wantShift - shiftX) * ease;
+    const ccx = zx - shiftX, ccy = zy + (mobile ? -0.28 * smooth(HOLD - 1, HOLD + 1, T) : 0);
+    for (let s = 0; s < n; s++) {
+      const th = ring + (s / n) * Math.PI * 2 - Math.PI / 2;
+      const su = ccx + rx * Math.cos(th), sv = ccy + ry * Math.sin(th);
+      satPx[s].x = W / 2 + su * half; satPx[s].y = H / 2 + sv * half; satPx[s].depth = 0.8 + 0.2 * Math.sin(th);
+    }
+    const cx = ccx, cy = ccy;
+
+    // stamp the signal clusters into their own cell buffer (desktop only; phones get a list)
+    for (const kk of satCells) satGlyph[kk] = -1;
+    satCells = [];
+    if (!mobile && arrive > 0) {
+      for (let s = 0; s < n; s++) {
+        const ci = Math.floor(satPx[s].x / cw), cj = Math.floor(satPx[s].y / ch);
+        const hl = s === hoverIdx || s === selIdx ? 1 : 0.62;
+        const tw = reduceMotion ? 1 : 0.9 + 0.1 * Math.sin(T * 2 + s * 1.7);
+        for (const [dx, dy, bb] of SAT_SHAPE) {
+          const i = ci + dx, j = cj + dy;
+          if (i < 0 || j < 0 || i >= cols || j >= rows) continue;
+          const kk = j * cols + i, b = bb * arrive * satPx[s].depth * hl * tw;
+          if (b < 0.06) continue;
+          satGlyph[kk] = Math.max(1, Math.min(RAMP.length - 1, Math.floor(b * RAMP.length)));
+          satB[kk] = b; satFam[kk] = SIG0 + s; satCells.push(kk);
+        }
+      }
+    }
+
     if (t >= ZOOM_START) stampStars();
 
     ctx.fillStyle = '#000';
@@ -273,6 +330,11 @@ export function createBeyond({ canvas, readout, reduceMotion = false }) {
         const u = ((i + 0.5) * cw - W / 2) / half;
         const h1 = hashA[k];
         let b = 0, fam = FIRE, glyph = -1, space = false, spaceMul = 1;
+        if (satGlyph[k] >= 0) {
+          const lv = Math.min(LEVELS - 1, Math.floor(satB[k] * LEVELS));
+          ctx.drawImage(atlas, satGlyph[k] * gw, (satFam[k] * LEVELS + lv) * gh, gw, gh, colX[i], rowY[j], gw, gh);
+          continue;
+        }
 
         if (!eyeGone) {
           // 1–3 · an eye opens out of the static, then we fall into the pupil
@@ -309,8 +371,6 @@ export function createBeyond({ canvas, readout, reduceMotion = false }) {
               base *= 1 - 0.75 * smooth(0.8, 1, tt); // dark limbal ring
               base += 0.25 * Math.exp(-((tt - 0.22) ** 2) / 0.004); // collarette
               b = base * fib;
-              const cx = qx - irisX + 0.13, cy = qy - irisY + 0.12;
-              if (cx * cx + cy * cy < 0.045 * 0.045) { b = 1; fam = STAR; } // catchlight
             } else {
               // sclera: warm white, a little greyer towards the corners
               const corner = Math.abs(lx) / 1.3;
@@ -327,18 +387,19 @@ export function createBeyond({ canvas, readout, reduceMotion = false }) {
         if (space) {
           if (starGlyph[k] >= 0) { glyph = starGlyph[k]; b = starB[k] * spaceMul; fam = STAR; }
           if (coreVis > 0) {
-            const du = u - zx, dv = v - zy;
+            const du = u - cx, dv = v - cy;
             const d = Math.sqrt(du * du + dv * dv);
+            const coreFam = h1 < tintMix ? tintTo : tintFrom; // cell-by-cell colour crossfade
             if (d < coreR) {
               const nx = du / coreR, ny = dv / coreR;
               const nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny));
               const lam = Math.max(0, -0.45 * nx - 0.55 * ny + 0.7 * nz);
               b = (0.16 + 0.84 * lam) * (0.92 + 0.08 * Math.sin((du * 3 + dv * 2) * 9 - T * 0.8)) * (0.96 + 0.04 * beat);
               b = Math.max(b, 0.75 * smooth(0.86, 1, d / coreR)); // rim light
-              b *= coreVis; glyph = -1; fam = PINK;
+              b *= coreVis; glyph = -1; fam = coreFam;
             } else {
               const g = Math.exp(-(d - coreR) / haloW) * 0.55 * coreVis * (0.96 + 0.04 * beat);
-              if (g > b) { b = g; glyph = -1; fam = PINK; }
+              if (g > b) { b = g; glyph = -1; fam = coreFam; }
             }
           }
           if (glyph < 0 && b < 0.06) continue;
@@ -362,7 +423,8 @@ export function createBeyond({ canvas, readout, reduceMotion = false }) {
     if (!force && now - hudAt < 250) return;
     hudAt = now;
     const p = phaseIndex(Math.min(T, HOLD));
-    readout.textContent = `BEYOND // PHASE ${p + 1}/${PHASES.length} · ${PHASES[p].name} · ${Math.round(fps)} FPS${paused ? ' · PAUSED' : ''}`;
+    const where = T >= HOLD && signals.length ? `CORE · ${signals.length} SIGNALS` : `PHASE ${p + 1}/${PHASES.length} · ${PHASES[p].name}`;
+    readout.textContent = `BEYOND // ${where} · ${Math.round(fps)} FPS${paused ? ' · PAUSED' : ''}`;
   }
 
   function tick(now) {
@@ -378,13 +440,18 @@ export function createBeyond({ canvas, readout, reduceMotion = false }) {
       const dT = step * speed;
       flyStars(flightSpeed(Math.min(T, HOLD)) * dT);
       T += dT;
+      // the ring keeps orbiting (even under the pointer); it only waits while a panel is open
+      if (!reduceMotion && selIdx < 0) ring += (dT / ORBIT_PERIOD) * Math.PI * 2;
     }
+    tintMix = Math.min(1, tintMix + step * 1.6);
+    frameStep = step;
     const ease = 1 - Math.exp(-step * 4);
     look.x += (look.tx - look.x) * ease;
     look.y += (look.ty - look.y) * ease;
     if (step > 0) fps += (1 / step - fps) * 0.1;
     render();
     updateReadout(false);
+    if (onFrame) onFrame({ sats: satPx, arrive: smooth(HOLD - 0.3, HOLD + 1.5, T), atCore: T >= HOLD, mobile: W < 820 });
   }
 
   /* ---------- input (navigation in/out is handled by main.js) ---------- */
@@ -393,7 +460,10 @@ export function createBeyond({ canvas, readout, reduceMotion = false }) {
     look.ty = Math.max(-1, Math.min(1, (e.clientY / window.innerHeight) * 2 - 1));
   });
   canvas.addEventListener('pointerleave', () => { look.tx = 0; look.ty = 0; });
-  canvas.addEventListener('click', () => api.togglePause());
+  canvas.addEventListener('click', () => {
+    if (onBackgroundClick && onBackgroundClick()) return; // e.g. clicking empty space closes a panel
+    api.togglePause();
+  });
   window.addEventListener('resize', () => {
     if (running) layout();
   });
@@ -417,6 +487,31 @@ export function createBeyond({ canvas, readout, reduceMotion = false }) {
     },
     togglePause() {
       paused = !paused;
+      updateReadout(true);
+    },
+    get atCore() { return running && T >= HOLD; },
+    // a signal under the pointer / keyboard focus: brightens
+    hover(i) { hoverIdx = i; },
+    // the open signal (-1 for none): the core crossfades to its colour
+    select(i) {
+      const target = i >= 0 ? SIG0 + i : PINK;
+      selIdx = i;
+      if (target === tintTo) return;
+      tintFrom = tintMix >= 0.5 ? tintTo : tintFrom;
+      tintTo = target;
+      tintMix = reduceMotion ? 1 : 0;
+    },
+    // jump past the eye sequence straight to the arrived core (for people who've seen it)
+    skipToCore() {
+      T = Math.max(T, HOLD);
+      if (running && atlas) render();
+      updateReadout(true);
+    },
+    // start the whole sequence again from static
+    replay() {
+      T = 0; ring = 0; hoverIdx = -1; selIdx = -1; shiftX = 0; paused = false;
+      tintFrom = tintTo = PINK; tintMix = 1;
+      if (running && atlas) render();
       updateReadout(true);
     },
     // jump to the start of the next / previous phase (the core is the end, it doesn't wrap)

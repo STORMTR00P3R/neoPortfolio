@@ -5,6 +5,8 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { SUN, PLANETS } from './data.js';
 import { createBeyond } from './beyond.js';
+import { createSignals } from './signals.js';
+import { INTERESTS } from './interests.js';
 
 const SUN_RADIUS = 6.5;
 const INSTANT = new URLSearchParams(location.search).has('instant'); // debug: skip tweens + boot
@@ -904,10 +906,17 @@ window.addEventListener('keydown', (e) => {
   if (e.target.closest('input, textarea')) return;
   if (!booted) return;
   if (state.beyond) {
-    if (e.key === 'Escape' || e.key === 'ArrowLeft') exitBeyond();
-    else if (e.key === ' ') { e.preventDefault(); beyond.togglePause(); }
+    // handled here and nowhere else, so 1–6 never reach the solar system's planet hotkeys
+    const sig = parseInt(e.key, 10);
+    if (e.key === 'Escape') signals.isOpen ? signals.close() : exitBeyond(); // panel first, then leave
+    else if (e.key === 'ArrowLeft') exitBeyond();
+    else if (e.key === ' ') {
+      if (e.target.closest('button, a')) return; // let Space press the focused button
+      e.preventDefault(); beyond.togglePause();
+    }
     else if (e.key === '[') beyond.skip(-1);
-    else if (e.key === ']') beyond.skip(1);
+    else if (e.key === ']') beyond.atCore ? replayBeyond() : beyond.skip(1);
+    else if (sig >= 1 && sig <= INTERESTS.length && beyond.atCore) signals.open(sig - 1);
     return;
   }
   const n = parseInt(e.key, 10);
@@ -1000,7 +1009,41 @@ function frame() {
 /* ======================================================================
    BEYOND — the ASCII visualizer that lives outside the solar system
    ====================================================================== */
-const beyond = createBeyond({ canvas: $('beyond'), readout: $('beyondReadout'), reduceMotion });
+const beyond = createBeyond({
+  canvas: $('beyond'), readout: $('beyondReadout'), reduceMotion,
+  signals: INTERESTS.map(({ label, color }) => ({ label, color })),
+  onFrame: (f) => { signals.update(f); updateBeyondHud(f.atCore); },
+  onBackgroundClick: () => (signals.isOpen ? (signals.close(), true) : false), // empty space closes a panel
+});
+const signals = createSignals({
+  layer: $('signals'), panel: $('signalPanel'), body: $('signalBody'), closeBtn: $('signalClose'),
+  interests: INTERESTS, beyond,
+});
+// the hint line and REPLAY button change once we've arrived at the core
+let hudAtCore = null;
+function updateBeyondHud(atCore) {
+  if (atCore === hudAtCore) return;
+  hudAtCore = atCore;
+  $('beyondHints').textContent = atCore
+    ? `[1–${INTERESTS.length}] SIGNALS · ] REPLAY · SPACE PAUSE · ← RETURN`
+    : 'CLICK / SPACE PAUSE · [ ] PHASE · ← / ESC RETURN';
+  $('beyondReplay').classList.toggle('show', atCore);
+  $('beyondSkip').classList.toggle('show', !atCore); // only while the eye sequence is playing
+}
+// skip the eye sequence: a quick fade out, then back in at the core
+function skipToCore() {
+  if (beyond.atCore) return;
+  if (reduceMotion) return beyond.skipToCore();
+  const c = $('beyond');
+  c.classList.add('skipping');
+  setTimeout(() => { beyond.skipToCore(); c.classList.remove('skipping'); }, 250);
+}
+$('beyondSkip').addEventListener('click', (e) => { e.currentTarget.blur(); skipToCore(); });
+function replayBeyond() {
+  signals.reset();
+  beyond.replay();
+}
+$('beyondReplay').addEventListener('click', (e) => { e.currentTarget.blur(); replayBeyond(); });
 let beyondSaved = null; // camera to fly back to
 let beyondSeq = 0; // guards against overlapping transitions
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -1045,6 +1088,7 @@ async function exitBeyond({ push = true } = {}) {
     history.pushState(null, '', h || location.pathname);
   }
   document.body.classList.remove('in-beyond');
+  signals.reset();
   renderCrumbs();
   updateEdgeArrows();
   await sleep(reduceMotion ? 200 : 450);
