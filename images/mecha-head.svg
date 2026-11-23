@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="52 95 605 645" fill="none" stroke="#fff" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Mecha head and shoulder, line art traced from images/mecha-head.png (centre lines, simplified).
+       Paths run left to right; the t value (0 to 1) in each style is that path's position, used to stagger the intro draw-in. -->
+  <g>
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.00" d="M657 191 L649 165 L626 158 L567 158 L557 166 L549 182 L531 199 L503 178 L454 168 L454 163 L466 151 L477 146 L485 136 L493 103 L492 97 L488 95 L423 117 L400 121 L375 135 L361 154 L352 178 L350 194 L328 216 L318 242 L309 248 L299 248 L269 233 L223 199 L97 117 L82 110 L63 110 L52 116 L54 123 L137 178 L232 247 L281 283 L301 303 L305 318 L320 328 L320 363 L332 368 L344 380 L349 409 L349 476 L357 477 L368 468 L366 449 L372 430 L378 421 L398 407 L401 388 L406 383 L412 383 L427 395 L429 422 L464 463 L481 505 L486 536 L483 544 L481 587 L487 608 L487 628 L504 661 L503 683 L521 708 L541 725 L556 731 L587 733 L594 740" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.04" d="M207 215 L200 212 L192 202 L177 195 L143 168 L76 124" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.06" d="M91 125 L164 176 L227 215 L228 220 L222 223" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.26" d="M207 215 L222 223" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.35" d="M266 254 L273 263 L278 264" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.35" d="M266 254 L270 246 L298 259 L324 259 L334 249 L346 223 L371 194" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.37" d="M314 296 L278 264" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.43" d="M314 296 L321 291 L334 271 L356 251" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.44" d="M317 317 L325 309 L326 302 L344 275 L367 254 L371 243 L382 228 L394 213 L402 208" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.46" d="M332 349 L334 336 L331 333" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.47" d="M343 371 L338 361 L349 352" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.47" d="M372 272 L366 270 L361 273 L342 295 L338 304 L338 319" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.47" d="M338 319 L356 317" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.50" d="M363 351 L367 373 L354 380 L353 392" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.50" d="M363 436 L354 403" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.51" d="M358 316 L370 293 L372 272" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.51" d="M360 186 L360 180 L366 170" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.52" d="M366 170 L371 171 L374 177 L400 198 L402 208" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.53" d="M370 336 L379 330 L390 313" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.53" d="M390 204 L371 194" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.53" d="M429 251 L403 246 L394 252 L379 270 L372 272" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.53" d="M373 416 L380 400 L386 394 L389 380 L395 371 L409 359 L418 357" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.54" d="M391 179 L378 165 L380 154 L387 145 L401 135 L465 121" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.54" d="M381 296 L388 298 L390 308" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.57" d="M406 329 L406 319 L399 313" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.58" d="M403 232 L402 208" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.58" d="M403 257 L416 257 L423 265" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.58" d="M418 278 L412 279 L407 285 L405 300" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.59" d="M406 329 L411 343 L416 346" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.60" d="M418 278 L412 302" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.60" d="M415 304 L416 313 L421 318" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.60" d="M436 371 L421 373 L418 370" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.60" d="M418 370 L422 365 L436 359" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.62" d="M431 273 L426 294 L445 299 L450 304 L447 310" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.63" d="M431 273 L465 268 L498 251 L514 238 L521 237" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.63" d="M447 174 L439 178 L432 240" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.63" d="M435 409 L437 392 L442 389 L447 372" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.64" d="M441 330 L462 332 L471 336" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.64" d="M441 327 L445 323 L447 310" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.64" d="M447 174 L442 262" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.64" d="M442 262 L454 261 L478 251 L502 236 L532 208 L540 204 L557 183 L564 169 L570 165" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.65" d="M485 108 L476 134 L447 157 L445 166" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.65" d="M466 363 L459 363 L447 372" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.67" d="M491 474 L487 462 L489 433 L483 417 L460 384 L458 372" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.68" d="M466 363 L467 359 L481 353" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.68" d="M498 427 L485 400 L470 378 L466 364" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.68" d="M483 362 L466 364" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.69" d="M521 237 L496 285 L484 317 L471 336" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.71" d="M523 291 L517 293 L498 335 L481 348" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.71" d="M554 414 L531 406 L516 397 L483 362" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.72" d="M490 562 L507 532 L513 527 L513 522" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.73" d="M494 586 L494 625" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.73" d="M500 437 L496 473" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.74" d="M513 643 L506 634 L499 632" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.74" d="M499 484 L505 511 L513 522" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.74" d="M643 557 L642 551 L629 543 L577 547 L562 551 L526 576 L500 582" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.75" d="M505 605 L511 608 L518 604 L520 596 L514 589 L506 591 L503 600 L505 605" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.75" d="M513 498 L509 483 L509 442 L506 435" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.76" d="M509 551 L512 542 L537 516 L537 509" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.76" d="M513 643 L519 644 L521 650 L519 654 L515 654" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.76" d="M513 498 L518 517" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.77" d="M518 517 L537 509" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.77" d="M560 615 L558 635 L550 653 L532 665 L518 665" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.78" d="M522 559 L534 556 L536 551" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.78" d="M523 291 L525 302 L537 301" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.78" d="M536 274 L532 283 L525 286" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.78" d="M532 270 L526 276 L525 286" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.79" d="M531 227 L538 226 L546 220" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.79" d="M531 227 L532 221 L550 206 L573 175 L600 172" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.79" d="M548 250 L532 266 L532 270" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.80" d="M536 274 L549 261 L552 254 L548 250" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.80" d="M572 512 L545 527 L536 540" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.80" d="M549 541 L545 547 L536 551" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.80" d="M541 600 L537 611 L541 613" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.80" d="M562 254 L558 266 L543 285 L537 301" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.80" d="M537 509 L552 497" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.80" d="M537 301 L539 304 L566 313 L584 316 L599 326" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.81" d="M541 613 L542 618 L546 620 L555 614" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.82" d="M624 516 L582 516 L553 531 L547 538" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.82" d="M561 603 L560 597 L549 594" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.82" d="M655 532 L604 525 L549 541" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.83" d="M566 431 L572 449 L559 473 L552 497" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.83" d="M624 516 L623 511 L601 493 L552 497" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.83" d="M554 414 L566 431" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.83" d="M554 414 L557 406 L593 400 L595 412 L591 416 L589 429 L582 436 L575 436 L566 431" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.83" d="M555 246 L557 238 L589 221 L618 215 L639 188 L643 180 L642 173 L600 172" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.84" d="M563 667 L558 664 L562 645" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.84" d="M562 254 L597 263 L607 260" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.84" d="M643 557 L594 579 L581 589 L568 606 L563 607" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.84" d="M563 667 L582 684 L606 688" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.84" d="M563 667 L573 657 L585 620 L591 613 L610 596 L636 585 L642 578" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.85" d="M610 305 L598 301 L573 283 L567 270" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.88" d="M583 214 L597 192 L600 172" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.89" d="M616 395 L608 394 L593 380 L594 336 L599 326" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.90" d="M623 309 L604 325 L599 326" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.91" d="M600 731 L628 720 L631 716" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.92" d="M606 688 L620 697 L630 710 L631 716" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.92" d="M606 688 L609 681 L627 671 L657 645" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.92" d="M656 211 L631 230 L612 249 L607 260" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.92" d="M623 307 L620 275 L615 264 L607 260" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.93" d="M641 449 L634 440 L629 421 L616 404 L616 395" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.93" d="M616 395 L622 368 L631 348 L657 327" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.94" d="M654 303 L636 303 L623 307" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.94" d="M623 309 L626 311 L626 321 L629 325" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.95" d="M655 320 L629 325" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.96" d="M654 704 L631 716" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.97" d="M656 342 L641 354" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.97" d="M641 449 L647 444 L656 397" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:0.98" d="M642 578 L650 566 L651 557" />
+    <path class="mh-line" pathLength="1" vector-effect="non-scaling-stroke" style="--t:1.00" d="M656 448 L657 471" />
+  </g>
+</svg>

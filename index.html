@@ -20,6 +20,7 @@
 </head>
 <body>
   <canvas id="scene"></canvas>
+  <canvas id="beyond" aria-label="Beyond: an animated ASCII visualizer. Click to pause."></canvas>
   <div id="labels">
     <svg id="leader" aria-hidden="true"><polyline points="" /><circle r="11" /><circle r="3" class="dot" /></svg>
     <div id="frame" class="off" aria-hidden="true">
@@ -57,6 +58,18 @@
       <button class="back" id="backBtn" hidden>◂ SYSTEM VIEW</button>
       <div class="hints" id="hints">DRAG ROTATE · SCROLL ZOOM · CLICK A PLANET · [1–5] JUMP · [ESC] BACK</div>
     </footer>
+
+    <!-- Beyond: the way out of (and back into) the solar system -->
+    <button class="edge-arrow right" id="beyondEnter" aria-label="Exit the system: go beyond">
+      <span class="edge-label">EXIT SYSTEM</span><span class="chev">›</span>
+    </button>
+    <button class="edge-arrow left" id="beyondExit" aria-label="Return to the solar system">
+      <span class="chev">‹</span><span class="edge-label">RETURN</span>
+    </button>
+    <div class="beyond-hud" id="beyondHud" aria-live="off">
+      <div class="beyond-readout" id="beyondReadout">BEYOND // PHASE 1/5 · STATIC</div>
+      <div class="hints">CLICK / SPACE PAUSE · [ ] PHASE · ← / ESC RETURN</div>
+    </div>
 
     <div class="corner tl"></div><div class="corner tr"></div>
     <div class="corner bl"></div><div class="corner br"></div>

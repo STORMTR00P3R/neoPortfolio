@@ -4,6 +4,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { SUN, PLANETS } from './data.js';
+import { createBeyond } from './beyond.js';
 
 const SUN_RADIUS = 6.5;
 const INSTANT = new URLSearchParams(location.search).has('instant'); // debug: skip tweens + boot
@@ -498,6 +499,7 @@ const state = {
   civ: -1,
   timeScale: 1,
   idle: 0,
+  beyond: false, // the ASCII visualizer outside the system is open
 };
 
 function worldPos(obj, v = new THREE.Vector3()) { return obj.getWorldPosition(v); }
@@ -559,6 +561,7 @@ function afterNav(push) {
   planets.forEach((p, i) => p.surfaceMat.uniforms.uActiveCity.value = i === state.planet ? state.civ : -1);
   renderCrumbs();
   renderIndex();
+  updateEdgeArrows();
   if (push) {
     const h = hashFor();
     if (location.hash !== h) history.pushState(null, '', h || location.pathname);
@@ -576,6 +579,13 @@ function hashFor() {
 
 function fromHash() {
   const [, a, b] = location.hash.split('/');
+  if (a === 'beyond') return enterBeyond({ push: false });
+  if (state.beyond) {
+    // browser back out of Beyond: if it lands on the view we left from, just fly back to it
+    const same = location.hash === hashFor();
+    exitBeyond({ push: false });
+    if (same) return;
+  }
   if (a === 'origin') return goSun({ push: false });
   const pi = planets.findIndex((p) => p.data.id === a);
   if (pi < 0) return goSystem({ push: false });
@@ -676,6 +686,10 @@ $('backBtn').addEventListener('click', goBack);
 
 function renderCrumbs() {
   const parts = [`<button data-go="system">SYSTEM</button>`];
+  if (state.beyond) {
+    $('crumbs').innerHTML = parts.concat(`<span class="here">BEYOND</span>`).join('<span class="sep">/</span>');
+    return;
+  }
   if (state.view === 'sun') parts.push(`<span class="here">ORIGIN</span>`);
   if (state.view === 'planet') {
     const p = planets[state.planet];
@@ -686,7 +700,7 @@ function renderCrumbs() {
 }
 $('crumbs').addEventListener('click', (e) => {
   const go = e.target.closest('button')?.dataset.go;
-  if (go === 'system') goSystem();
+  if (go === 'system') state.beyond ? exitBeyond() : goSystem();
   if (go === 'planet') goPlanet(state.planet);
 });
 
@@ -819,6 +833,7 @@ let drag = null;
 let hovered = null;
 
 canvas.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'touch' && inEdgeZone(e.clientX)) return;
   drag = { x: e.clientX, y: e.clientY, moved: 0, theta: rig.goal.theta, phi: rig.goal.phi };
   canvas.setPointerCapture(e.pointerId);
 });
@@ -887,8 +902,17 @@ function pick(e) {
 
 window.addEventListener('keydown', (e) => {
   if (e.target.closest('input, textarea')) return;
+  if (!booted) return;
+  if (state.beyond) {
+    if (e.key === 'Escape' || e.key === 'ArrowLeft') exitBeyond();
+    else if (e.key === ' ') { e.preventDefault(); beyond.togglePause(); }
+    else if (e.key === '[') beyond.skip(-1);
+    else if (e.key === ']') beyond.skip(1);
+    return;
+  }
   const n = parseInt(e.key, 10);
   if (e.key === 'Escape') goBack();
+  else if (e.key === 'ArrowRight' && state.view === 'system') enterBeyond();
   else if (e.key === '0') goSun();
   else if (n >= 1 && n <= planets.length) goPlanet(n - 1);
   else if (state.view === 'planet' && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
@@ -913,7 +937,20 @@ window.addEventListener('resize', () => {
 const clock = new THREE.Clock();
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+let running3D = true, rafId = 0;
+function pause3D() {
+  running3D = false;
+  cancelAnimationFrame(rafId);
+}
+function resume3D() {
+  if (running3D) return;
+  running3D = true;
+  clock.getDelta(); // don't let the paused time leak into the next frame
+  rafId = requestAnimationFrame(frame);
+}
+
 function frame() {
+  if (!running3D) return;
   const dt = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime;
 
@@ -946,7 +983,7 @@ function frame() {
     p.orbitLine.material.opacity += ((state.view === 'system' ? 0.28 : 0.08) - p.orbitLine.material.opacity) * 0.1;
   });
 
-  if (state.view === 'planet') worldPos(planets[state.planet].root, rig.targetGoal);
+  if (state.view === 'planet' && !state.beyond) worldPos(planets[state.planet].root, rig.targetGoal);
   const wantOffset = detail.classList.contains('open') && window.innerWidth >= 820 ? -4.5 : 0;
   if (Math.abs(camera.filmOffset - wantOffset) > 0.01) {
     camera.filmOffset += (wantOffset - camera.filmOffset) * (INSTANT ? 1 : 1 - Math.pow(0.01, dt));
@@ -957,8 +994,99 @@ function frame() {
   updateLabels();
   updateFrame();
   composer.render();
-  requestAnimationFrame(frame);
+  rafId = requestAnimationFrame(frame);
 }
+
+/* ======================================================================
+   BEYOND — the ASCII visualizer that lives outside the solar system
+   ====================================================================== */
+const beyond = createBeyond({ canvas: $('beyond'), readout: $('beyondReadout'), reduceMotion });
+let beyondSaved = null; // camera to fly back to
+let beyondSeq = 0; // guards against overlapping transitions
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function updateEdgeArrows() {
+  $('beyondEnter').classList.toggle('show', booted && !state.beyond && state.view === 'system');
+  $('beyondExit').classList.toggle('show', state.beyond);
+  $('beyondHud').classList.toggle('show', state.beyond);
+}
+
+async function enterBeyond({ push = true, instant = false } = {}) {
+  if (state.beyond) return;
+  state.beyond = true;
+  const seq = ++beyondSeq;
+  if (!beyondSaved) {
+    beyondSaved = { theta: rig.goal.theta, phi: rig.goal.phi, radius: rig.goal.radius, target: rig.targetGoal.clone(), min: rig.min, max: rig.max };
+  }
+  if (push) history.pushState(null, '', '#/beyond');
+  renderCrumbs();
+  updateEdgeArrows();
+  document.body.classList.add('leaving');
+  if (!instant && !reduceMotion) {
+    // fly off to the right: slide the look-target along the camera's right vector and pull back
+    const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
+    rig.targetGoal.addScaledVector(right, rig.radius * 1.1);
+    rig.max = Infinity;
+    rig.goal.radius = rig.radius * 1.8;
+  }
+  await sleep(instant ? 0 : reduceMotion ? 250 : 900);
+  if (seq !== beyondSeq) return;
+  pause3D();
+  beyond.start();
+  document.body.classList.add('in-beyond');
+}
+
+async function exitBeyond({ push = true } = {}) {
+  if (!state.beyond) return;
+  state.beyond = false;
+  const seq = ++beyondSeq;
+  if (push) {
+    const h = hashFor();
+    history.pushState(null, '', h || location.pathname);
+  }
+  document.body.classList.remove('in-beyond');
+  renderCrumbs();
+  updateEdgeArrows();
+  await sleep(reduceMotion ? 200 : 450);
+  if (seq !== beyondSeq) return;
+  beyond.stop();
+  resume3D();
+  if (beyondSaved) {
+    // the camera is still where it flew off to, so restoring the goals flies it back
+    const s = beyondSaved;
+    rig.goal.theta = s.theta; rig.goal.phi = s.phi; rig.goal.radius = s.radius;
+    rig.targetGoal.copy(s.target);
+    rig.min = s.min; rig.max = s.max;
+    beyondSaved = null;
+  }
+  document.body.classList.remove('leaving');
+}
+
+for (const id of ['beyondEnter', 'beyondExit']) {
+  $(id).addEventListener('click', (e) => {
+    e.currentTarget.blur(); // so Space doesn't re-trigger the button
+    id === 'beyondEnter' ? enterBeyond() : exitBeyond();
+  });
+}
+
+// swipes: from the right edge to leave the system, anywhere in Beyond to come back
+function inEdgeZone(x) {
+  return booted && !state.beyond && state.view === 'system' && x > window.innerWidth - 32;
+}
+let swipe = null;
+window.addEventListener('touchstart', (e) => {
+  const t = e.touches[0];
+  swipe = e.touches.length === 1 && (state.beyond || inEdgeZone(t.clientX)) ? { x: t.clientX, y: t.clientY } : null;
+}, { passive: true });
+window.addEventListener('touchend', (e) => {
+  if (!swipe) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - swipe.x, dy = t.clientY - swipe.y;
+  swipe = null;
+  if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
+  if (!state.beyond && dx < 0) enterBeyond();
+  else if (state.beyond && dx > 0) exitBeyond();
+}, { passive: true });
 
 /* ======================================================================
    Boot sequence
@@ -1001,12 +1129,15 @@ function finishBoot() {
   booted = true;
   $('boot').classList.add('done');
   $('hud').classList.remove('hidden');
-  if (location.hash) fromHash();
+  if (location.hash === '#/beyond') {
+    goSystem({ push: false });
+    enterBeyond({ push: false, instant: true });
+  } else if (location.hash) fromHash();
   else goSystem({ push: false });
 }
 
 renderIndex();
 renderCrumbs();
 rig.goal.radius = 200; // stay far out until boot finishes
-frame();
+rafId = requestAnimationFrame(frame);
 boot();
