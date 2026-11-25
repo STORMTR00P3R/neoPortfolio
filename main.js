@@ -7,6 +7,7 @@ import { SUN, PLANETS } from './data.js';
 import { createBeyond } from './beyond.js';
 import { createSignals } from './signals.js';
 import { INTERESTS } from './interests.js';
+import { buildLogoFromPixels, hyperspaceJump } from './logo-pixels.js';
 
 const SUN_RADIUS = 6.5;
 const INSTANT = new URLSearchParams(location.search).has('instant'); // debug: skip tweens + boot
@@ -1135,6 +1136,20 @@ window.addEventListener('touchend', (e) => {
 /* ======================================================================
    Boot sequence
    ====================================================================== */
+// how the logo appears after the boot log: 'interlace' (every other line, then the lines between),
+// 'pixel' (hex dots fly in and lock into shape), 'trace' (outlines draw, then it fills in),
+// 'lockin' (mistuned ghosts snap together) or 'paint' (top to bottom)
+const LOGO_REVEAL = 'interlace';
+// how the intro leaves: 'hyperspace' (the logo stretches into light streaks towards the centre, then snaps
+// away), 'fade' (a plain fade into the site), 'warp' (the star flies forward and becomes
+// the sun), 'crt' (collapses to a line, then a dot, like an old TV switching off) or 'fly' (the logo flies
+// into the EB//OS wordmark)
+const LOGO_EXIT = 'crt';
+// once the logo is in: 'breathe' (its glow swells and settles once while the motto fades in)
+// or 'motto' (the motto types along its arc, letter by letter)
+const LOGO_HOLD = 'motto';
+// a streak of light sweeps down the star once the logo and motto are complete
+const LOGO_GLINT = false;
 const BOOT = [
   ['EB//OS STELLAR INDEX v12.0', ''],
   ['(c) ELIAS BLUM — LAS VEGAS, NV', ''],
@@ -1160,18 +1175,92 @@ async function boot() {
   if (reduceMotion || INSTANT) skipped = true;
   for (const [line, tag] of BOOT) {
     if (skipped) break;
-    out.innerHTML += esc(line);
-    if (tag) { await wait(90); out.innerHTML += `<span class="${tag}">${tag === 'ok' ? '[ OK ]' : ''}</span>`; }
-    out.innerHTML += '\n';
+    // each line is its own element, appended without re-rendering the lines above it
+    const el = document.createElement('span');
+    el.className = 'boot-line';
+    el.textContent = line;
+    out.append(el);
+    if (tag) {
+      await wait(90);
+      const t = document.createElement('span');
+      t.className = tag;
+      t.textContent = tag === 'ok' ? '[ OK ]' : '';
+      el.append(t);
+    }
+    out.append('\n');
     await wait(70);
   }
-  if (!skipped) await wait(450);
+  if (!skipped) await wait(350);
+  if (!skipped) {
+    // the log gives way to the logo, big in the centre (SKIP cuts any of this short)
+    $('boot').classList.add(`reveal-${LOGO_REVEAL}`, 'show-logo');
+    if (LOGO_REVEAL === 'pixel') {
+      buildLogoFromPixels($('boot'), document.querySelector('.boot-logo'), document.querySelector('.logo-mark'), { duration: 1000 })
+        .then(() => $('boot').classList.add('pixels-done')); // the solid logo takes over from the dots
+    }
+    await wait(1400); // the mark appears (built, traced, locked in or painted)
+    if (LOGO_HOLD === 'breathe') {
+      // the glow swells and settles once, like a screen warming up, as the motto fades in with it
+      if (!skipped) $('boot').classList.add('breathe');
+      if (!skipped) await wait(1900);
+    } else {
+      // the motto types along its arc, one whole letter at a time, with a beat between words
+      const motto = document.querySelector('.logo-motto');
+      const stops = motto.dataset.stops.split(',').map(Number);
+      const pauses = motto.dataset.pauses.split(',').map(Number);
+      for (let i = 0; i < stops.length && !skipped; i++) {
+        motto.style.setProperty('--sweep', `${stops[i]}deg`);
+        await wait(pauses[i] ? 150 : 55);
+      }
+    }
+    if (!skipped && LOGO_GLINT) $('boot').classList.add('glint'); // light sweeps down the star's blade
+    if (!skipped) await wait(900); // a moment with the finished logo before it leaves
+    if (!skipped) return { hyperspace: lightSpeedJump, fade: () => finishBoot(), fly: flyLogoHome, crt: crtPowerOff, warp: warpToSun }[LOGO_EXIT]();
+  }
   finishBoot();
 }
-function finishBoot() {
+// exit: the star breaks off the logo and flies to the centre of the screen, where the sun is, growing and
+// turning gold as it comes towards you, then dissolves into the real sun as the camera arrives
+function warpToSun() {
+  const star = document.querySelector('.logo-star');
+  const box = document.querySelector('.boot-logo').getBoundingClientRect();
+  // the star's heart (where its two arms meet) is about 59% across and 27% down the logo
+  star.style.setProperty('--wx', `${window.innerWidth / 2 - (box.left + box.width * 0.59)}px`);
+  star.style.setProperty('--wy', `${window.innerHeight / 2 - (box.top + box.height * 0.27)}px`);
+  $('boot').classList.add('warp');
+  finishBoot({ handoff: 1200 });
+}
+// exit: light-speed jump. The logo becomes streaks of light rushing to the centre, which snap away in a
+// flash; the screen goes see-through underneath so the solar system is there when the flash clears
+function lightSpeedJump() {
+  const boot = $('boot');
+  const imgs = [document.querySelector('.logo-mark'), document.querySelector('.logo-motto')];
+  boot.classList.add('hyper');
+  hyperspaceJump(boot, document.querySelector('.boot-logo'), imgs, { duration: 1100 });
+  finishBoot({ handoff: 1150 });
+}
+// exit: the intro screen collapses to a bright line, then a dot, and winks out over the site
+function crtPowerOff() {
+  $('boot').classList.add('crt-off');
+  finishBoot({ handoff: 800 });
+}
+// exit: the logo flies into the EB//OS wordmark in the HUD as the site appears behind it
+function flyLogoHome() {
+  const logo = document.querySelector('.boot-logo');
+  const from = logo.getBoundingClientRect();
+  const to = document.querySelector('.brand-mark').getBoundingClientRect();
+  logo.style.setProperty('--fx', `${to.left + to.width / 2 - (from.left + from.width / 2)}px`);
+  logo.style.setProperty('--fy', `${to.top + to.height / 2 - (from.top + from.height / 2)}px`);
+  logo.style.setProperty('--fs', String((to.height * 2) / from.height));
+  $('boot').classList.add('fly');
+  finishBoot({ handoff: 900 });
+}
+function finishBoot({ handoff = 0 } = {}) {
   if (booted) return;
   booted = true;
-  $('boot').classList.add('done');
+  // after a fly-out or CRT power-off, let that exit animation finish before removing the overlay
+  if (handoff) setTimeout(() => $('boot').classList.add('done'), handoff);
+  else $('boot').classList.add('done');
   $('hud').classList.remove('hidden');
   if (location.hash === '#/beyond') {
     goSystem({ push: false });

@@ -86,6 +86,25 @@
 
   <!-- Boot -->
   <div id="boot">
+    <!-- revealed big in the centre once the log finishes; recoloured from images/logo.png to the text colour.
+         Two layers: the mark paints in top to bottom, then the motto types along its arc. data-stops are the
+         angles (around --cx/--cy) between each letter, measured from the image, so whole letters appear. -->
+    <div class="boot-logo">
+      <img class="logo-mark" src="images/logo-intro.png" alt="EB//OS — Gaudium et spes. Per aspera ad astra." width="743" height="927" />
+      <svg class="logo-trace" viewBox="0 0 743 927" aria-hidden="true" focusable="false">
+        <path class="lt-line" pathLength="1" style="--i:0" d="M65 278 L75 278 L83 281 L89 287 L92 298 L92 451 L89 462 L83 468 L72 471 L63 471 L63 483 L225 483 L227 430 L212 430 L208 452 L203 460 L195 466 L189 468 L121 467 L121 377 L195 376 L195 362 L121 361 L121 281 L177 280 L185 282 L189 284 L198 295 L201 306 L202 318 L217 318 L215 266 L63 266 L63 278 L65 278" />
+        <path class="lt-line" pathLength="1" style="--i:1" d="M733 744 L477 299 L477 296 L484 282 L614 26 L610 27 L375 171 L274 15 L269 10 L277 213 L322 265 L253 266 L253 278 L269 279 L277 284 L281 292 L281 456 L278 463 L274 467 L268 470 L253 471 L253 483 L362 482 L385 477 L402 468 L411 459 L418 445 L421 426 L418 404 L410 389 L401 380 L388 373 L374 369 L375 367 L391 360 L398 355 L535 515 L534 517 L522 521 L508 530 L501 538 L495 549 L492 560 L492 579 L495 592 L501 604 L513 617 L521 623 L535 631 L553 638 L576 650 L589 662 L593 669 L595 677 L595 691 L593 699 L589 707 L581 715 L574 719 L558 723 L545 723 L534 720 L529 717 L521 710 L513 696 L509 674 L497 677 L489 687 L489 704 L495 717 L509 729 L526 735 L540 737 L557 737 L572 735 L586 731 L602 722 L612 712 L621 694 L623 684 L622 663 L616 648 L610 640 L596 628 L584 621 L540 601 L527 590 L522 582 L519 571 L519 558 L521 550 L526 541 L530 537 L540 531 L547 530 L726 740 L732 745" />
+        <path class="lt-line" pathLength="1" style="--i:2" d="M373 515 L389 517 L410 526 L420 533 L431 544 L440 557 L450 581 L454 600 L454 651 L451 666 L442 690 L433 704 L418 719 L399 730 L383 735 L368 737 L342 736 L325 732 L305 722 L291 710 L278 691 L270 670 L266 651 L266 599 L274 568 L285 548 L299 533 L319 521 L335 516 L348 514 L373 515" />
+        <path class="lt-line" pathLength="1" style="--i:3" d="M307 686 L314 700 L326 712 L337 718 L348 721 L372 721 L383 718 L398 709 L410 694 L417 677 L422 649 L423 620 L421 593 L418 577 L409 555 L405 549 L390 536 L378 531 L364 529 L343 531 L326 539 L318 546 L310 557 L301 582 L297 622 L299 657 L302 673 L307 686" />
+        <path class="lt-line" pathLength="1" style="--i:4" d="M385 448 L382 454 L375 461 L361 467 L312 468 L311 377 L350 376 L362 378 L375 384 L381 390 L386 399 L389 413 L389 433 L385 448" />
+        <path class="lt-line" pathLength="1" style="--i:5" d="M377 341 L375 346 L369 353 L355 360 L344 362 L312 362 L311 281 L334 280 L379 332 L377 341" />
+      </svg>
+      <div class="logo-star" aria-hidden="true"></div>
+      <div class="logo-glint" aria-hidden="true"></div>
+      <img class="logo-motto" src="images/logo-intro-motto.png" alt="" aria-hidden="true" width="743" height="927"
+        style="--cx: 48.81%; --cy: 48.92%; --start: 231.4deg"
+        data-stops="227.2,223.5,220.0,216.3,214.5,210.9,205.95,202.7,198.65,195.9,192.9,190.1,187.7,186.0,182.6,179.8,175.6,171.7,169.3,166.4,163.5,159.9,155.85,151.8,147.6,143.5,141.3,137.7,134.0,130.7,128.8" data-pauses="0,0,0,0,0,0,1,0,1,0,0,0,0,1,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0" />
+    </div>
     <pre id="bootText"></pre>
     <button id="bootSkip">SKIP ▸</button>
   </div>

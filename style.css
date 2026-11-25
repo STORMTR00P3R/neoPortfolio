@@ -366,6 +366,197 @@ body:not(.in-beyond) .signals, body:not(.in-beyond) .signal-panel { visibility: 
   transition: opacity .9s;
 }
 #boot.done { opacity: 0; pointer-events: none; }
+#bootText { min-height: calc(13 * 1.7em); } /* the full log's height, so it doesn't creep up as lines type in */
+/* when the log finishes it fades away and the logo is painted in big in the centre, top to bottom in
+   fine bands like an old terminal, led by a dark edge on the logo itself; then the whole intro fades into the site */
+#bootText { transition: opacity .35s ease; }
+#boot.show-logo #bootText { opacity: 0; }
+.boot-logo {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  height: min(52vh, 460px); aspect-ratio: 743 / 927;
+  filter: drop-shadow(0 0 12px var(--accent-dim)); /* on the wrapper, so the glow isn't clipped */
+  visibility: hidden; pointer-events: none;
+}
+.boot-logo img { display: block; width: 100%; height: 100%; }
+.logo-mark { clip-path: inset(0 0 100% 0); }
+/* the motto is revealed by a conic mask around its arc's centre; JS steps --sweep letter by letter */
+.logo-motto {
+  position: absolute; inset: 0; --sweep: var(--start);
+  -webkit-mask: conic-gradient(from 0deg at var(--cx) var(--cy), transparent var(--sweep), #000 var(--sweep), #000 var(--start), transparent var(--start));
+  mask: conic-gradient(from 0deg at var(--cx) var(--cy), transparent var(--sweep), #000 var(--sweep), #000 var(--start), transparent var(--start));
+}
+/* the scan edge: a thin, black band cut to the logo's own shape (masked by the image), riding just
+   ahead of the painted part, so the light only shows where the logo actually is */
+.boot-logo::after {
+  content: ''; position: absolute; inset: 0;
+  background: var(--bg);
+  -webkit-mask: url('images/logo-intro.png') center / 100% 100% no-repeat;
+  mask: url('images/logo-intro.png') center / 100% 100% no-repeat;
+  clip-path: inset(0 0 100% 0);
+  opacity: 0;
+}
+#boot.show-logo .boot-logo { visibility: visible; }
+#boot.reveal-paint.show-logo .logo-mark { animation: logo-scan 1.3s steps(90, end) forwards; } /* ~5px bands */
+#boot.reveal-paint.show-logo .boot-logo::after { animation: logo-scanline 1.3s steps(90, end) forwards; }
+@keyframes logo-scan { to { clip-path: inset(0 0 0 0); } }
+/* reveal style 2, "signal lock-in": two mistuned ghost copies (pink and pale cyan) jitter towards each
+   other like a CRT out of alignment, then snap together into the logo with a bright flash */
+#boot.reveal-lockin .logo-mark { clip-path: none; opacity: 0; }
+#boot.reveal-lockin .boot-logo::before,
+#boot.reveal-lockin .boot-logo::after {
+  content: ''; position: absolute; inset: 0; clip-path: none; opacity: 0;
+  -webkit-mask: url('images/logo-intro.png') center / 100% 100% no-repeat;
+  mask: url('images/logo-intro.png') center / 100% 100% no-repeat;
+}
+#boot.reveal-lockin .boot-logo::before { background: #ff3cac; }
+#boot.reveal-lockin .boot-logo::after { background: #c8fbff; }
+#boot.reveal-lockin.show-logo .boot-logo::before { animation: lock-ghost-a 1.1s steps(1, end) forwards; }
+#boot.reveal-lockin.show-logo .boot-logo::after { animation: lock-ghost-b 1.1s steps(1, end) forwards; }
+#boot.reveal-lockin.show-logo .logo-mark { animation: lock-main 1.1s linear forwards; }
+@keyframes lock-ghost-a {
+  0% { opacity: .8; transform: translate(-14%, 1%); }
+  12% { transform: translate(-8%, -1.5%); }
+  22% { transform: translate(-12%, .5%); }
+  34% { transform: translate(-5%, 1.2%); }
+  46% { transform: translate(-7%, -.6%); }
+  58% { transform: translate(-2.4%, .3%); }
+  68% { opacity: .8; transform: translate(-3%, 0); }
+  74% { opacity: .8; transform: translate(0, 0); }
+  86%, 100% { opacity: 0; transform: translate(0, 0); }
+}
+@keyframes lock-ghost-b {
+  0% { opacity: .7; transform: translate(12%, -1%); }
+  12% { transform: translate(9%, 1.2%); }
+  22% { transform: translate(13%, -.4%); }
+  34% { transform: translate(6%, -1.4%); }
+  46% { transform: translate(4%, .8%); }
+  58% { transform: translate(3%, -.2%); }
+  68% { opacity: .7; transform: translate(1.5%, 0); }
+  74% { opacity: .7; transform: translate(0, 0); }
+  86%, 100% { opacity: 0; transform: translate(0, 0); }
+}
+@keyframes lock-main { /* hidden until the ghosts converge, then a flash that settles */
+  0%, 73% { opacity: 0; filter: brightness(1); }
+  74% { opacity: 1; filter: brightness(3); }
+  100% { opacity: 1; filter: brightness(1); }
+}
+/* reveal style 3, "vector trace": thin outlines of the star and letters draw themselves in
+   (traced from the logo image), then the solid logo fills in inside them and the outlines fade */
+.logo-trace { display: none; }
+#boot.reveal-trace .logo-trace {
+  display: block; position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible;
+  fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linejoin: round;
+}
+.lt-line { vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; }
+#boot.reveal-trace .logo-mark { clip-path: none; opacity: 0; }
+#boot.reveal-trace .boot-logo::after { display: none; }
+#boot.reveal-trace.show-logo .lt-line { animation: lt-draw .8s cubic-bezier(.45, 0, .25, 1) calc(var(--i) * .07s) forwards; }
+#boot.reveal-trace.show-logo .logo-trace { animation: lt-fade .4s ease 1.15s forwards; }
+#boot.reveal-trace.show-logo .logo-mark { animation: lt-fill .5s ease .95s forwards; }
+@keyframes lt-draw { to { stroke-dashoffset: 0; } }
+@keyframes lt-fade { to { opacity: 0; } }
+@keyframes lt-fill { to { opacity: 1; } }
+/* reveal style 4, "pixel build": hex dots fly in and lock into the logo's shape (logo-pixels.js draws them
+   on a canvas inside .boot-logo), then the solid logo fades in over them */
+#boot.reveal-pixel .logo-mark { clip-path: none; opacity: 0; transition: opacity .4s ease; }
+#boot.reveal-pixel .boot-logo::after { display: none; }
+#boot.reveal-pixel.pixels-done .logo-mark { opacity: 1; }
+.logo-pixels { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; transition: opacity .5s ease; }
+#boot.pixels-done .logo-pixels { opacity: 0; }
+/* reveal style 5, "interlaced scan": like an old interlaced monitor, every other line paints in top to bottom,
+   then a second pass fills in the lines between. Two striped layers of the logo: the mark itself (pass 1)
+   and a copy in ::before (pass 2), each masked by its stripes AND a growing top-to-bottom window */
+@property --scan1 { syntax: '<percentage>'; inherits: false; initial-value: 0%; }
+@property --scan2 { syntax: '<percentage>'; inherits: false; initial-value: 0%; }
+#boot.reveal-interlace .boot-logo::after { display: none; }
+#boot.reveal-interlace .logo-mark {
+  clip-path: none;
+  -webkit-mask: repeating-linear-gradient(#000 0 2px, transparent 2px 4px), linear-gradient(#000 var(--scan1), transparent var(--scan1));
+  -webkit-mask-composite: source-in;
+  mask: repeating-linear-gradient(#000 0 2px, transparent 2px 4px), linear-gradient(#000 var(--scan1), transparent var(--scan1));
+  mask-composite: intersect;
+}
+#boot.reveal-interlace .boot-logo::before {
+  content: ''; position: absolute; inset: 0;
+  background: url('images/logo-intro.png') center / 100% 100% no-repeat;
+  -webkit-mask: repeating-linear-gradient(transparent 0 2px, #000 2px 4px), linear-gradient(#000 var(--scan2), transparent var(--scan2));
+  -webkit-mask-composite: source-in;
+  mask: repeating-linear-gradient(transparent 0 2px, #000 2px 4px), linear-gradient(#000 var(--scan2), transparent var(--scan2));
+  mask-composite: intersect;
+}
+#boot.reveal-interlace.show-logo .logo-mark { animation: scan-pass-1 .6s steps(60, end) forwards; }
+#boot.reveal-interlace.show-logo .boot-logo::before { animation: scan-pass-2 .6s steps(60, end) .65s forwards; }
+@keyframes scan-pass-1 { to { --scan1: 100%; } }
+@keyframes scan-pass-2 { to { --scan2: 100%; } }
+/* breathing glow: once the logo is in, its glow swells brighter and settles back once, like a screen
+   warming up, while the motto fades in whole (instead of typing) */
+#boot.breathe .boot-logo { animation: logo-breathe 1.8s ease-in-out forwards; }
+#boot.breathe .logo-motto { -webkit-mask: none; mask: none; opacity: 0; animation: motto-fade-in .8s ease .25s forwards; }
+@keyframes logo-breathe {
+  0%, 100% { filter: drop-shadow(0 0 12px var(--accent-dim)); }
+  50% { filter: drop-shadow(0 0 34px rgba(76, 240, 255, .85)) brightness(1.18); }
+}
+@keyframes motto-fade-in { to { opacity: 1; } }
+/* star glint: once the logo is complete, a streak of light sweeps down the star's long blade, like light
+   catching a metal emblem. Only on the star: clipped to its outline and masked by the logo's own ink */
+.logo-glint {
+  position: absolute; inset: 0; opacity: 0; pointer-events: none;
+  clip-path: polygon(37% 1.4%, 51.3% 19.1%, 83.6% 3.2%, 65% 32.6%, 99.7% 81.1%, 38.1% 23.4%);
+  -webkit-mask: url('images/logo-intro.png') center / 100% 100% no-repeat;
+  mask: url('images/logo-intro.png') center / 100% 100% no-repeat;
+  /* a soft white band across the blade, angled to travel from the top arms down to the bottom tip */
+  background: linear-gradient(139deg, transparent 45%, rgba(255, 255, 255, .95) 50%, transparent 55%) 0 0 / 200% 200% no-repeat;
+}
+#boot.glint .logo-glint { opacity: 1; animation: star-glint .8s cubic-bezier(.4, 0, .3, 1) forwards; }
+@keyframes star-glint {
+  from { background-position: 100% 100%; }
+  to { background-position: 0% 0%; }
+}
+/* exit: warp to the sun. The star is cut out of the logo (polygon traced along its edges) and flies to the
+   screen centre where the sun is, growing towards you and turning gold, then dissolves into the real sun */
+.logo-star {
+  display: none; position: absolute; inset: 0;
+  background: url('images/logo-intro.png') center / 100% 100% no-repeat;
+  clip-path: polygon(37% 1.4%, 51.3% 19.1%, 83.6% 3.2%, 65% 32.6%, 99.7% 81.1%, 38.1% 23.4%);
+  transform-origin: 59% 27%; /* the star's heart, where its arms meet */
+}
+#boot.warp { background-color: transparent; transition: background-color .7s ease, opacity .9s; pointer-events: none; }
+#boot.warp .logo-star { display: block; animation: warp-star 1.15s cubic-bezier(.55, 0, .7, .4) forwards; }
+#boot.warp .logo-mark, #boot.warp .logo-motto, #boot.warp .boot-logo::before, #boot.warp #bootSkip { opacity: 0; transition: opacity .3s ease; }
+#boot.warp .boot-logo { filter: none; }
+@keyframes warp-star { /* cyan → the sun's warm gold, then it swells into a glow and dissolves into the sun */
+  0% { transform: translate(0, 0) scale(1); filter: drop-shadow(0 0 8px var(--accent-dim)); opacity: 1; }
+  45% { transform: translate(var(--wx), var(--wy)) scale(1.5);
+        filter: sepia(1) saturate(3) hue-rotate(-22deg) brightness(1.15) drop-shadow(0 0 18px #ff9a3c); opacity: 1; }
+  90%, 100% { transform: translate(var(--wx), var(--wy)) scale(2.6);
+         filter: sepia(1) saturate(3) hue-rotate(-22deg) brightness(2) blur(22px); opacity: 0; }
+}
+/* exit: light-speed jump (logo-pixels.js draws the streaks). The logo hands over to its streaks at once,
+   and the black background clears partway through so the solar system is waiting behind the flash */
+#boot.hyper { pointer-events: none; background-color: transparent; transition: background-color .45s ease .45s, opacity .9s; }
+#boot.hyper .boot-logo, #boot.hyper #bootSkip { opacity: 0; transition: opacity .2s ease .18s; } /* stays solid until the streaks take over */
+/* exit: CRT power-off. The whole intro screen squashes to a bright horizontal line, the line shrinks to
+   a glowing dot, and the dot winks out, revealing the site around it */
+#boot.crt-off { animation: crt-off .8s cubic-bezier(.6, 0, .4, 1) forwards; pointer-events: none; transform-origin: 50% 50%; }
+@keyframes crt-off { /* the screen flares white as it collapses, so the line and dot glow like a real CRT */
+  0% { transform: scale(1, 1); background-color: var(--bg); box-shadow: none; opacity: 1; }
+  30% { background-color: var(--bg); } /* stays dark while it squashes; flares only as it becomes a line */
+  40% { transform: scale(1, .004); background-color: #f4feff; box-shadow: 0 0 40px 8px rgba(76, 240, 255, .8); opacity: 1; }
+  70% { transform: scale(.004, .004); background-color: #fff; box-shadow: 0 0 30px 12px rgba(76, 240, 255, .9); opacity: 1; }
+  100% { transform: scale(0, 0); background-color: #fff; box-shadow: 0 0 10px 2px rgba(76, 240, 255, 0); opacity: 0; }
+}
+/* exit: the logo flies into the EB//OS wordmark in the HUD while the solar system shows through */
+#boot.fly { background: transparent; pointer-events: none; transition: background .8s ease, opacity .9s; }
+#boot.fly .boot-logo {
+  transform: translate(calc(-50% + var(--fx)), calc(-50% + var(--fy))) scale(var(--fs));
+  opacity: 0;
+  transition: transform .9s cubic-bezier(.65, 0, .25, 1), opacity .3s ease .6s;
+}
+@keyframes logo-scanline { /* a 3%-tall band whose bottom edge matches the painted edge */
+  0% { clip-path: inset(-3% 0 100% 0); opacity: 1; }
+  99% { clip-path: inset(96% 0 1% 0); opacity: 1; }
+  100% { clip-path: inset(97% 0 0 0); opacity: 0; }
+}
 #bootText { margin: 0; font-size: 13px; line-height: 1.7; letter-spacing: .12em; color: var(--accent); text-shadow: 0 0 8px var(--accent-dim); min-width: min(520px, 90vw); white-space: pre-wrap; }
 #bootText .ok { color: #7dffb2; }
 #bootText .warn { color: var(--sun); }
@@ -407,6 +598,7 @@ body:not(.in-beyond) .signals, body:not(.in-beyond) .signal-panel { visibility: 
   .beyond-readout { font-size: 10px; letter-spacing: .2em; }
   .beyond-hud .hints { display: none; }
   .beyond-hud .beyond-skip { padding: 10px 16px; }
+  .boot-logo { height: min(40vh, 320px); }
   /* phones: no tiny orbiting targets, the categories become a tap-friendly list under the core */
   .signals.grid {
     inset: auto 16px 72px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
@@ -426,6 +618,11 @@ body:not(.in-beyond) .signals, body:not(.in-beyond) .signal-panel { visibility: 
 }
 @media (prefers-reduced-motion: reduce) {
   .detail, #hud, #boot { transition: none; }
+  #boot.show-logo .logo-mark { animation: none; clip-path: none; opacity: 1; }
+  #boot.show-logo .boot-logo::before, #boot.show-logo .boot-logo::after { animation: none; opacity: 0; }
+  #boot.show-logo .logo-trace { display: none; }
+  .logo-motto { -webkit-mask: none; mask: none; }
+  #boot.show-logo .boot-logo::after { animation: none; }
   /* a plain crossfade instead of the fly-out */
   #scene, #beyond { transition: opacity .25s linear; }
   body.leaving #scene { filter: none; transform: none; }
